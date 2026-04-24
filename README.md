@@ -72,8 +72,8 @@ Matplotlib
 
 
 🔧 Installation
-git clone https://github.com/raja2571/Case_Study_Tredence_Analytics_AI_Engineering_Intern/
-cd YOUR_REPOSITORY_NAME
+git clone https://github.com/raja2571/Case_Study_Tredence_Analytics_AI_Engineering_Intern.git
+cd Case_Study_Tredence_Analytics_AI_Engineering_Intern
 pip install torch torchvision matplotlib numpy
 ▶️ Train the Model
 python train_pruning.py
