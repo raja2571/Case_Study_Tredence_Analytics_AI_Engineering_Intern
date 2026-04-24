@@ -69,8 +69,10 @@ PyTorch
 Torchvision
 NumPy
 Matplotlib
+
+
 🔧 Installation
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
+git clone https://github.com/raja2571/Case_Study_Tredence_Analytics_AI_Engineering_Intern/
 cd YOUR_REPOSITORY_NAME
 pip install torch torchvision matplotlib numpy
 ▶️ Train the Model
