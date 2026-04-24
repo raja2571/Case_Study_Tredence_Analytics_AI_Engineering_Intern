@@ -1,101 +1,94 @@
-Self-Pruning Neural Network 🧠✂️
+🧠✂️ Self-Pruning Neural Network
 
 Tredence Studio — AI Agents Engineering Internship Case Study
 
-This repository contains a PyTorch implementation of a Feed-Forward Neural Network that dynamically learns to prune its own weights during the training process. Instead of relying on post-training magnitude pruning, this model utilizes a custom PrunableLinear layer with a learnable gating mechanism driven by an L1 Sparsity regularization loss.
+This project implements a self-pruning Feed-Forward Neural Network in PyTorch.
+Unlike traditional pruning methods applied after training, this model learns to prune its own weights during training using a differentiable gating mechanism.
 
-🎯 The Core Concept: PrunableLinear
+🎯 Core Idea: PrunableLinear Layer
 
-Standard linear layers (torch.nn.Linear) are replaced with a custom module. Alongside the standard weight and bias tensors, this layer introduces a learnable parameter tensor called gate_scores (with the exact same dimensions as the weights).
+Instead of using standard torch.nn.Linear, we introduce a custom layer that includes learnable gates.
 
-During the forward pass, these scores are passed through a Sigmoid activation to create continuous gates between $0$ and $1$, which are then element-wise multiplied with the weights:
+Each weight has a corresponding parameter called gate_scores, which controls whether the connection stays active.
 
+🔁 Forward Pass
 def forward(self, x):
-    # 1. Transform gate_scores into gates between 0 and 1
+    # 1. Convert gate scores into values between 0 and 1
     gates = torch.sigmoid(self.gate_scores)
     
-    # 2. Element-wise multiplication (Pruning step)
+    # 2. Apply element-wise pruning
     pruned_weights = self.weight * gates
     
-    # 3. Standard linear transformation
+    # 3. Perform linear transformation
     return F.linear(x, pruned_weights, self.bias)
+🧮 Sparsity Regularization
 
+To encourage pruning, we add a sparsity term to the loss function:
 
-🧮 The Sparsity Regularization (Why L1 on Sigmoid?)
+Total Loss=Classification Loss+λ∑σ(gate_scores)
+💡 Why L1 on Sigmoid?
+Sigmoid output ∈ (0, 1)
+Summing all gates ≈ L1 norm
+Minimizing this term pushes gates → 0
+This forces corresponding weights → inactive (pruned)
 
-To force the network to actively drop connections, a custom regularization term is added to the standard Cross-Entropy Loss:
+👉 The only way for a sigmoid output to approach 0 is:
 
-$$\text{Total Loss} = \text{Classification Loss} + \lambda \sum \sigma(\text{gate\_scores})$$
+gate_scores→−∞
+⚖️ Trade-off Parameter (λ)
 
-Why this works:
-Because the output of the Sigmoid function ($\sigma$) is strictly bound between (0, 1), taking the sum of all gates across the network is functionally equivalent to taking the L1 Norm.
+Controls the balance between:
 
-The optimizer's goal is to minimize the total loss. To minimize this sparsity term, it must force the gate values towards 0. Because the gates are the output of a Sigmoid function, the only mathematical way for the gate to reach 0 is for the underlying parameter (gate_scores) to be pushed towards negative infinity ($-\infty$).
+🎯 Accuracy
+✂️ Sparsity
 
-The L1 norm provides a relentless, constant gradient force pushing the gate_scores downwards until the Sigmoid output effectively hits 0, completely turning off (pruning) that specific weight. The hyperparameter $\lambda$ controls the trade-off between network accuracy and absolute sparsity.
+Higher λ → More pruning, but lower accuracy.
 
 📊 Experimental Results (CIFAR-10)
+Lambda (λ)	Test Accuracy (%)	Sparsity Level (%)
+0.0	52.36%	0.00%
+1e-5	51.10%	45.12%
+5e-5	48.74%	88.35%
+1e-4	41.21%	96.01%
 
-The model was trained on the CIFAR-10 dataset. Below is a comparison of the network's performance and self-pruning ability across different values of the sparsity penalty ($\lambda$).
+⚠️ Results may vary slightly due to random initialization.
 
-(Note: A weight is considered "pruned" if its corresponding gate value falls below 1e-2).
+📈 Gate Distribution Analysis
 
-Lambda ($\lambda$)
+For λ = 5e-5, the learned gate values show:
 
-Test Accuracy (%)
+🔴 Large spike at 0 → pruned connections
+🟢 Small cluster near 1 → important connections
 
-Sparsity Level (%)
+This confirms that the model automatically identifies and removes redundant weights.
 
-0.0 (Baseline)
-
-52.36%
-
-0.00%
-
-1e-5
-
-51.10%
-
-45.12%
-
-5e-5
-
-48.74%
-
-88.35%
-
-1e-4
-
-41.21%
-
-96.01%
-
-⚠️ Note to Reviewer: Because initialization is stochastic, exact decimals will vary slightly upon re-execution.
-
-Gate Distribution Analysis
-
-Below is the histogram of the final gate values for the model trained with λ = 5e-05.
-
-As hypothesized, the L1 penalty successfully bifurcates the network's connections. We see a massive structural spike exactly at 0 (representing the pruned connections) and a secondary, much smaller cluster scattered towards 1.0 (the critical connections the network preserved to maintain classification accuracy).
-
-🚀 How to Run the Code
-
-Prerequisites: Python 3.8+, PyTorch, Torchvision, Matplotlib, and NumPy.
-
-Clone the repository:
-
-git clone <YOUR-GITHUB-REPO-LINK>
-cd self-pruning-neural-network
-
-
-Install dependencies:
-
+🚀 How to Run
+📦 Prerequisites
+Python 3.8+
+PyTorch
+Torchvision
+NumPy
+Matplotlib
+🔧 Installation
+git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
+cd YOUR_REPOSITORY_NAME
 pip install torch torchvision matplotlib numpy
-
-
-Run the training pipeline:
-
+▶️ Train the Model
 python train_pruning.py
+⚡ Features
+✅ Dynamic weight pruning during training
+✅ Learnable gating mechanism
+✅ L1-based sparsity regularization
+✅ Works with CPU, CUDA, or Apple MPS
+✅ Automatic result logging and visualization
+📂 Output
+📊 Training logs printed in terminal
+📈 Gate distribution plots saved in /results directory
+🔮 Future Improvements
+Structured pruning (channel/filter-level)
+Apply to CNN architectures (ResNet, VGG)
+Inference speed benchmarking
+Hardware-aware pruning
+🤝 Acknowledgment
 
-
-The script automatically detects and utilizes CUDA (NVIDIA) or MPS (Apple Silicon) if available. It will train across 4 different $\lambda$ values, print the results to the terminal, and automatically generate the distribution plot inside a new /results directory.
+Developed as part of the Tredence Studio AI Agents Engineering Internship Case Study.
